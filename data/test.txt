@@ -1,0 +1,7 @@
+This is rather long (for a test file) line of text in a sample txt file.
+Oh, there is another line
+And one more
+The fourth line
+The fifth line
+the sixth line
+This is the last one
