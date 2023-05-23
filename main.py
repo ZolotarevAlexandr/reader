@@ -1,14 +1,10 @@
 import sys
-import os
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import QTimer, QEventLoop
 from PyQt5.Qt import QTextCursor
 
-from data.ui_file import Ui_MainWindow
-
-import cgitb
-cgitb.enable(format='text')
+from data.main_ui import Ui_MainWindow
 
 
 def qt_sleep(time):
@@ -17,36 +13,26 @@ def qt_sleep(time):
     loop.exec_()
 
 
-def create_progress_file(forced=False):
-    if not os.path.exists('progress.txt') or forced:
-        with open('progress.txt', 'w'):
-            pass
-
-
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.setWindowTitle('Running line')
+        self.setWindowTitle('Reading')
 
-        if os.path.exists('progress.txt') and os.path.exists('last_book.txt'):
-            with open('progress.txt') as file:
-                content = file.read()
-                self.running_line.setText(content)
+        with open('progress.txt') as file:
+            content = file.read()
+            self.running_line.setText(content)
 
-            with open('last_book.txt') as file:
-                path = file.read()
-            with open(path) as book_file:
-                self.book_text = book_file.read()
-        else:
-            self.change_book()
+        with open('last_book.txt') as file:
+            path = file.read()
+        with open(path) as book_file:
+            self.book_text = book_file.read()
 
         self.start_btn.clicked.connect(self.run_line)
         self.plus_btn.clicked.connect(self.change_speed)
         self.minus_btn.clicked.connect(self.change_speed)
         self.pause_btn.clicked.connect(self.change_pause_state)
         self.cont_btn.clicked.connect(self.change_pause_state)
-        self.change_btn.clicked.connect(self.change_book)
 
         self.speed = 100
         self.paused = False
@@ -78,6 +64,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if displayed in self.running_line.toPlainText():
                 continue
 
+            if letter == '\n':
+                qt_sleep(self.speed * 3)
+
             self.running_line.setText(displayed)
             cursor.movePosition(QTextCursor.End)
             self.running_line.setTextCursor(cursor)
@@ -86,33 +75,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             while self.paused:
                 qt_sleep(10)
 
-    def change_book(self):
-        filepath, ok = QFileDialog.getOpenFileName(self, 'Выберите книгу', '',
-                                                   'Текстовый файл (*.txt)')
-        if ok:
-            with open(filepath) as file:
-                self.book_text = file.read()
-
-            with open('last_book.txt', 'w') as file:
-                file.write(filepath)
-
-            create_progress_file(forced=True)
-            self.running_line.clear()
-
     def closeEvent(self, event):
         with open('progress.txt', 'w') as file:
             file.write(self.running_line.toPlainText())
         event.accept()
-        exit(0)
-
-
-def main():
-    create_progress_file()
-    app = QApplication(sys.argv)
-    ex = MainWindow()
-    ex.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
+        sys.exit()
